@@ -37,49 +37,53 @@ function nodes_inventari_column($column, $post_id) {
     if ('estat' === $column) {
         $url_base = 'edit.php?post_type=nodes_inventari';
         $estats = get_the_terms($post_id, 'nodes_estat_inventari');
-        $estats_list = '';
 
-        foreach ($estats as $estat) {
-            $estats_list .= " <a href='" . $url_base . "&nodes_estat_inventari=" . $estat->slug . "'>" . $estat->name . "</a>,";
+        if (is_array($estats)) {
+            $estats_list = '';
+            foreach ($estats as $estat) {
+                $estats_list .= " <a href='" . $url_base . "&nodes_estat_inventari=" . $estat->slug . "'>" . $estat->name . "</a>,";
+            }
+            echo rtrim($estats_list, ','); // remove last comma
         }
-
-        echo rtrim($estats_list, ','); // remove last comma
     }
 
     if ('ambit' === $column) {
         $url_base = 'edit.php?post_type=nodes_inventari';
         $ambits = get_the_terms($post_id, 'nodes_ambit_inventari');
-        $ambits_list = '';
 
-        foreach ($ambits as $ambit) {
-            $ambits_list .= " <a href='" . $url_base . "&nodes_ambit_inventari=" . $ambit->slug . "'>" . $ambit->name . "</a>,";
+        if (is_array($ambits)) {
+            $ambits_list = '';
+            foreach ($ambits as $ambit) {
+                $ambits_list .= " <a href='" . $url_base . "&nodes_ambit_inventari=" . $ambit->slug . "'>" . $ambit->name . "</a>,";
+            }
+            echo rtrim($ambits_list, ','); // remove last comma
         }
-
-        echo rtrim($ambits_list, ','); // remove last comma
     }
 
     if ('origen' === $column) {
         $url_base = 'edit.php?post_type=nodes_inventari';
         $origens = get_the_terms($post_id, 'nodes_origen_inventari');
-        $origens_list = '';
 
-        foreach ($origens as $origen) {
-            $origens_list .= " <a href='" . $url_base . "&nodes_origen_inventari=" . $origen->slug . "'>" . $origen->name . "</a>,";
+        if (is_array($origens)) {
+            $origens_list = '';
+            foreach ($origens as $origen) {
+                $origens_list .= " <a href='" . $url_base . "&nodes_origen_inventari=" . $origen->slug . "'>" . $origen->name . "</a>,";
+            }
+            echo rtrim($origens_list, ','); // remove last comma
         }
-
-        echo rtrim($origens_list, ','); // remove last comma
     }
 
     if ('ubicacio' === $column) {
         $url_base = 'edit.php?post_type=nodes_inventari';
         $ubicacions = get_the_terms($post_id, 'nodes_ubicacio_inventari');
-        $ubicacio_list = '';
 
-        foreach ($ubicacions as $ubi) {
-            $ubicacio_list .= " <a href='" . $url_base . "&nodes_ubicacio_inventari=" . $ubi->slug . "'>" . $ubi->name . "</a>,";
+        if (is_array($ubicacions)) {
+            $ubicacio_list = '';
+            foreach ($ubicacions as $ubi) {
+                $ubicacio_list .= " <a href='" . $url_base . "&nodes_ubicacio_inventari=" . $ubi->slug . "'>" . $ubi->name . "</a>,";
+            }
+            echo rtrim($ubicacio_list, ','); // remove last comma
         }
-
-        echo rtrim($ubicacio_list, ','); // remove last comma
     }
 
 }
