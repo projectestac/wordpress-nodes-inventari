@@ -96,25 +96,6 @@ function nodes_inventari_sortable_columns($columns) {
     return $columns;
 }
 
-// Pre-selected "Oberta"
-add_filter('wp_terms_checklist_args', function ($args, $post_id) {
-
-    if ($args['taxonomy'] !== 'nodes_estat_inventari') {
-        return $args;
-    }
-
-    // Only do this for new posts, i.e. doesn't overwrite a post that has already been saved
-    if (isset($_GET['post'])) {
-        return $args;
-    }
-
-    $estat = get_term_by('name', 'Oberta', 'nodes_estat_inventari');
-    $args['selected_cats'][] = $estat->term_id;
-
-    return $args;
-
-}, 10, 2);
-
 add_filter('posts_join', 'nodes_inventari_search_join');
 
 function nodes_inventari_search_join($join) {
@@ -122,7 +103,7 @@ function nodes_inventari_search_join($join) {
     global $pagenow, $wpdb;
 
     // I want the filter only when performing a search on edit page of Custom Post Type named "nodes_inventari".
-    if (is_admin() && 'edit.php' === $pagenow && 'nodes_inventari' === $_GET['post_type'] && !empty($_GET['s'])) {
+    if (isset($_GET['post_type']) && is_admin() && 'edit.php' === $pagenow && 'nodes_inventari' === $_GET['post_type'] && !empty($_GET['s'])) {
         $join .= 'LEFT JOIN ' . $wpdb->postmeta . ' ON ' . $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id ';
     }
 
@@ -137,7 +118,7 @@ function nodes_inventari_search_where($where) {
     global $pagenow, $wpdb;
 
     // I want the filter only when performing a search on edit page of Custom Post Type named "nodes_inventari".
-    if (is_admin() && 'edit.php' === $pagenow && 'nodes_inventari' === $_GET['post_type'] && !empty($_GET['s'])) {
+    if (isset($_GET['post_type']) && is_admin() && 'edit.php' === $pagenow && 'nodes_inventari' === $_GET['post_type'] && !empty($_GET['s'])) {
         $where = preg_replace(
             "/\(\s*" . $wpdb->posts . ".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
             "(" . $wpdb->posts . ".post_title LIKE $1) OR (" . $wpdb->postmeta . ".meta_value LIKE $1)", $where);
@@ -326,8 +307,15 @@ add_filter('views_edit-nodes_inventari', 'nodes_inventari_quick_links_labels');
 
 // TODO: Internacionalització
 function nodes_inventari_quick_links_labels($views) {
-    $views['trash'] = str_replace('Paperera', 'Arxivades', $views['trash']);
-    $views['mine'] = str_replace('Els meus', 'Les meves', $views['mine']);
+
+    if (isset($views['trash'])) {
+        $views['trash'] = str_replace('Paperera', 'Arxivades', $views['trash']);
+    }
+
+    if (isset($views['mine'])) {
+        $views['mine'] = str_replace('Els meus', 'Les meves', $views['mine']);
+    }
 
     return $views;
+
 }

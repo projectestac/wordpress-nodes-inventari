@@ -7,7 +7,7 @@ function admin_inventari_list_add_export_button($which) {
 
     if ('nodes_inventari' === $typenow && 'top' === $which) {
         ?>
-        <input type="submit" name="export_all_inventari" class="button button-primary export"
+        <input type="submit" name="export_all_inventari" class="button export"
                value="<?php _e('Exporta'); ?>"/>
         <?php
     }

@@ -34,6 +34,10 @@ function inventari_template() {
 
 function save_inventari($post_id, $post) {
 
+    if (!isset($_POST['inventari_noncename'])) {
+        return $post->ID;
+    }
+
     if (!wp_verify_nonce($_POST['inventari_noncename'], plugin_basename(__FILE__))) {
         return $post->ID;
     }
