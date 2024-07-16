@@ -6,7 +6,6 @@ function nodes_inventari_css() {
 
     echo '<style>';
     echo '.column-wps_post_id {width:70px !important}';
-    echo '#A2A_SHARE_SAVE_meta {display:none}';
     echo '.post-type-nodes_inventari #addtag div.term-slug-wrap {display:none}';
     echo '.lbl-sace {display:block;width:300px}';
     echo '
