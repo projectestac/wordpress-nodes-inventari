@@ -1,7 +1,7 @@
 <?php
 /**
  * @package Nodes_Inventari_digital
- * @version 1.1.0
+ * @version 1.1.1
  */
 
 /**
@@ -9,7 +9,7 @@
  * Plugin URI: https://agora.xtec.cat/nodes/inventari_digital
  * Description: Extensió per la gestió de l'inventari digital d'un centre educatiu.
  * Author: Xavier Meler, Òscar Benítez
- * Version: 1.1.0
+ * Version: 1.1.1
  */
 
 if (!defined('ABSPATH')) {
