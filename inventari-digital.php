@@ -29,11 +29,16 @@ add_action('init', 'nodes_inventari_end_activation');
 
 function nodes_inventari_activate() {
     add_option('Activated_inventari', 'nodes_inventari');
+
+    // En activar l'extensió, 'init' ja s'ha executat i el CPT i les taxonomies no estan registrats.
+    // Cal registrar-los abans del flush perquè les regles de reescriptura els incloguin.
+    nodes_inventari_register_post_type();
+    nodes_inventari_register_taxonomy();
     flush_rewrite_rules();
 }
 
 function nodes_inventari_end_activation() {
-    if (get_option('Activated_inventari') == 'nodes_inventari') {
+    if (get_option('Activated_inventari') === 'nodes_inventari') {
         delete_option('Activated_inventari');
     }
 }

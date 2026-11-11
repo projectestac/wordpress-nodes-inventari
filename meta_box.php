@@ -54,7 +54,7 @@ function nodes_inventari_save($post_id, $post) {
         return $post->ID;
     }
 
-    if ($post->post_type != 'nodes_inventari') {
+    if ($post->post_type !== 'nodes_inventari') {
         return $post->ID;
     }
 
@@ -64,7 +64,7 @@ function nodes_inventari_save($post_id, $post) {
     
     foreach ($inventari_meta as $key => $value) {
         // Check if it's a revision
-        if ($post->post_type == 'revision') {
+        if ($post->post_type === 'revision') {
             return;
         }
 

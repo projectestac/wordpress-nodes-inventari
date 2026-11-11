@@ -78,7 +78,7 @@ function func_export_all_inventari() {
         header('Expires: 0');
 
         $file = fopen('php://output', 'w');
-        fputs($file, "\xEF\xBB\xBF");
+        fwrite($file, "\xEF\xBB\xBF");
 
         fputcsv($file, [
             'ID',
@@ -97,7 +97,8 @@ function func_export_all_inventari() {
         foreach ($arr_post as $post) {
             setup_postdata($post);
 
-            $element = get_the_title();
+            // Títol tal com està desat: get_the_title() aplica wptexturize i retorna entitats HTML (&#8217;)
+            $element = $post->post_title;
             $descripcio = trim(strip_tags(get_the_content()));
 
             $sace = get_post_meta(get_the_ID(), 'sace', true);

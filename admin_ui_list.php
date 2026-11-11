@@ -182,7 +182,7 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
     }
 
     // Only add filter to post type you want
-    if ('nodes_inventari' == $type) {
+    if ('nodes_inventari' === $type) {
         //change this to the list of values you want to show
         //in 'label' => 'value' format
 
@@ -206,7 +206,7 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 (
                     '<option value="%s"%s>%s</option>',
                     esc_attr($value),
-                    $value == $current_v ? ' selected="selected"' : '',
+                    $value === $current_v ? ' selected="selected"' : '',
                     esc_html($label)
                 );
             }
@@ -233,7 +233,7 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 (
                     '<option value="%s"%s>%s</option>',
                     esc_attr($value),
-                    $value == $current_v ? ' selected="selected"' : '',
+                    $value === $current_v ? ' selected="selected"' : '',
                     esc_html($label)
                 );
             }
@@ -261,7 +261,7 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 (
                     '<option value="%s"%s>%s</option>',
                     esc_attr($value),
-                    $value == $current_v ? ' selected="selected"' : '',
+                    $value === $current_v ? ' selected="selected"' : '',
                     esc_html($label)
                 );
             }
@@ -289,7 +289,7 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 (
                     '<option value="%s"%s>%s</option>',
                     esc_attr($value),
-                    $value == $current_v ? ' selected="selected"' : '',
+                    $value === $current_v ? ' selected="selected"' : '',
                     esc_html($label)
                 );
             }

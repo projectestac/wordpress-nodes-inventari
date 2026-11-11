@@ -163,7 +163,7 @@ function nodes_inventari_register_taxonomy() {
 // Set predefined terms
 function nodes_inventari_set_terms() {
 
-    if (get_option('Activated_inventari') != 'nodes_inventari') {
+    if (get_option('Activated_inventari') !== 'nodes_inventari') {
         return;
     }
 
