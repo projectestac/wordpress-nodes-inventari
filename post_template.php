@@ -4,24 +4,65 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Les fitxes de l'inventari només són visibles per a usuaris connectats
+// Cert si la petició és d'un visitant anònim al web públic. No s'aplica a l'administració,
+// al WP-Cron ni a la línia d'ordres (scripts del Portal), on no hi ha usuari però sí accés legítim.
+function nodes_inventari_es_anonim_public() {
+    if (is_user_logged_in() || wp_doing_cron() || 'cli' === PHP_SAPI) {
+        return false;
+    }
+    return !is_admin() || wp_doing_ajax();
+}
+
+// Les fitxes de l'inventari només són visibles per a usuaris connectats: ni la vista individual,
+// ni els arxius (de tipus, de taxonomia, de data, d'autor), ni la cerca, ni els feeds.
+// El post_type es comprova directament perquè, si arriba com a array (?post_type[]=...),
+// is_post_type_archive() retorna fals i la consulta llistaria l'inventari.
 add_action('template_redirect', 'nodes_inventari_nomes_connectats');
 
 function nodes_inventari_nomes_connectats() {
+    global $wp_query;
 
-      $es_contingut_inventari = is_singular('nodes_inventari')
+    if (!nodes_inventari_es_anonim_public()) {
+        return;
+    }
+
+    $es_contingut_inventari = is_singular('nodes_inventari')
         || is_post_type_archive('nodes_inventari')
         || is_tax([
-        'nodes_estat_inventari',
-        'nodes_ambit_inventari',
-        'nodes_origen_inventari',
-        'nodes_ubicacio_inventari',
-    ]);
+            'nodes_estat_inventari',
+            'nodes_ambit_inventari',
+            'nodes_origen_inventari',
+            'nodes_ubicacio_inventari',
+        ])
+        || in_array('nodes_inventari', (array) $wp_query->get('post_type'), true);
 
-    if ($es_contingut_inventari && !is_user_logged_in()) {
+    if ($es_contingut_inventari) {
         auth_redirect();
     }
 }
+
+// Xarxa de seguretat: treu els elements de l'inventari dels resultats de qualsevol consulta
+// secundària (ginys, blocs, extensions de tercers...) feta per a un visitant anònim. La consulta
+// principal no es toca perquè la redirecció anterior ja l'atura i així es manté la redirecció
+// al login des de la vista individual.
+add_filter('the_posts', function ($posts, $query) {
+    if (empty($posts) || $query->is_main_query() || !nodes_inventari_es_anonim_public()) {
+        return $posts;
+    }
+
+    return array_values(array_filter($posts, static function ($post) {
+        return 'nodes_inventari' !== get_post_type($post);
+    }));
+}, 10, 2);
+
+// oEmbed (/wp-json/oembed/1.0/embed?url=...) exposa el títol i l'autor de qualsevol entrada
+// publicada. Per als anònims, es tracta un element de l'inventari com si no existís (404).
+add_filter('oembed_request_post_id', function ($post_id) {
+    if ($post_id && 'nodes_inventari' === get_post_type($post_id) && nodes_inventari_es_anonim_public()) {
+        return 0;
+    }
+    return $post_id;
+});
 
 add_action('pre_get_posts', 'nodes_inventari_tax_archives_query');
 

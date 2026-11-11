@@ -20,10 +20,12 @@ function admin_inventari_list_add_export_button($which) {
 
 add_action('manage_posts_extra_tablenav', 'admin_inventari_list_add_export_button', 20, 1);
 
-//Neutralitza valors que Excel/LibreOffice/Sheets interpretarien com a fórmula
-// si el primer caràcter és =, +, -, @, tabulador o retorn de carro (injecció CSV).
+// Neutralitza valors que Excel/LibreOffice/Sheets interpretarien com a fórmula (injecció CSV): els
+// que comencen per tabulador o retorn de carro, i els que tenen =, +, - o @ com a primer caràcter
+// visible, encara que hi hagi espais (també no separables) al davant, perquè alguns fulls de càlcul
+// els ignoren.
 function nodes_inventari_csv_safe($v) {
-    if (is_string($v) && $v !== '' && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+    if (is_string($v) && preg_match('/^(?:[\t\r]|(?:\s|\xC2\xA0)*[=+\-@])/', $v)) {
         return "'" . $v;
     }
     return $v;
@@ -35,7 +37,8 @@ function func_export_all_inventari() {
         return;
     }
 
-    if (!is_user_logged_in()) {
+    // Cal poder crear entrades: és el permís que dona accés al llistat de l'inventari
+    if (!is_user_logged_in() || !current_user_can('edit_posts')) {
         wp_die(
             __('No tens permisos per exportar.'),
             __('Accés denegat'),
