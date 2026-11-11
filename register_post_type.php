@@ -46,7 +46,6 @@ function nodes_inventari_register_post_type() {
 
 }
 
-
 // TAXONOMIES
 
 function nodes_inventari_register_taxonomy() {

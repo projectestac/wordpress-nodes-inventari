@@ -61,7 +61,7 @@ function func_export_all_inventari() {
         'posts_per_page' => -1,
     ];
 
-        // Els professors (sense edit_others_posts) només exporten l'inventari que han creat ells
+    // Els professors (sense edit_others_posts) només exporten l'inventari que han creat ells
     if (!current_user_can('edit_others_posts')) {
         $arg['author'] = get_current_user_id();
     }

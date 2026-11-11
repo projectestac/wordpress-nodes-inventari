@@ -1,11 +1,9 @@
 <?php
-if (!defined('ABSPATH')) {
-    exit;
-}
 /**
  * @package Nodes_Inventari_digital
  * @version 1.1.0
  */
+
 /**
  * Plugin Name: Nodes: Inventari digital
  * Plugin URI: https://agora.xtec.cat/nodes/inventari_digital
@@ -13,6 +11,10 @@ if (!defined('ABSPATH')) {
  * Author: Xavier Meler, Òscar Benítez
  * Version: 1.1.0
  */
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 require_once plugin_dir_path(__FILE__) . 'register_post_type.php';
 require_once plugin_dir_path(__FILE__) . 'meta_box.php';

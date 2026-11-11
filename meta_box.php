@@ -39,9 +39,9 @@ function nodes_inventari_template() {
 function nodes_inventari_save($post_id, $post) {
 
     if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-    return $post->ID;
+        return $post->ID;
     }
-  
+
     if (!isset($_POST['inventari_noncename'])) {
         return $post->ID;
     }
@@ -61,7 +61,7 @@ function nodes_inventari_save($post_id, $post) {
     // Fix #5: sanejar sempre l'entrada de l'usuari abans de desar-la
     $inventari_meta['sace'] = sanitize_text_field($_POST['sace'] ?? '');
     $inventari_meta['serialnumber'] = sanitize_text_field($_POST['serialnumber'] ?? '');
-    
+
     foreach ($inventari_meta as $key => $value) {
         // Check if it's a revision
         if ($post->post_type === 'revision') {

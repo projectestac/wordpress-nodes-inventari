@@ -130,8 +130,8 @@ function nodes_inventari_search_join($join, $query) {
 
     if (nodes_inventari_is_cpt_search($query)) {
         $join .= " LEFT JOIN {$wpdb->postmeta}
-                   ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
-                   AND {$wpdb->postmeta}.meta_key IN ('sace', 'serialnumber') ";
+                  ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
+                  AND {$wpdb->postmeta}.meta_key IN ('sace', 'serialnumber') ";
     }
 
     return $join;
@@ -165,7 +165,7 @@ function nodes_inventari_search_groupby($groupby, $query) {
     return $groupby;
 }
 
-// Dropdown filters with custom fields 
+// Dropdown filters with custom fields
 
 add_action('restrict_manage_posts', 'nodes_inventari_admin_posts_filter_restrict_manage_posts');
 
@@ -299,17 +299,6 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
     }
 
 }
-
-
-/**
- * if submitted filter by post meta
- *
- * @param  (wp_query object) $query
- *
- * @return Void
- * @author Ohad Raz
- */
-
 
 add_filter('views_edit-nodes_inventari', 'nodes_inventari_quick_links_labels');
 
