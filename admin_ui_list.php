@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 // Show custom data in "Inventari digital" admin ui
 
 add_filter('manage_nodes_inventari_posts_columns', 'nodes_inventari_admin_ui_columns');
@@ -8,6 +12,7 @@ function nodes_inventari_admin_ui_columns($columns) {
     return [
         'cb' => $columns['cb'],
         'wps_post_id' => __('ID'),
+        'imatge' => __('Imatge', 'nodes'),
         'title' => __('Title'),
         'ambit' => __('Tipus', 'nodes'),
         'ubicacio' => __('Ubicació', 'nodes'),
@@ -22,16 +27,25 @@ add_action('manage_nodes_inventari_posts_custom_column', 'nodes_inventari_column
 
 function nodes_inventari_column($column, $post_id) {
 
+    // Escapar sempre la sortida de meta guardada per l'usuari
     if ('sace' === $column) {
-        echo get_post_meta($post_id, 'sace', true);
+        echo esc_html(get_post_meta($post_id, 'sace', true));
     }
 
     if ('serialnumber' === $column) {
-        echo get_post_meta($post_id, 'serialnumber', true);
+        echo esc_html(get_post_meta($post_id, 'serialnumber', true));
     }
 
     if ('wps_post_id' === $column) {
-        echo $post_id;
+        echo (int) $post_id;
+    }
+
+    if ('imatge' === $column) {
+        if (has_post_thumbnail($post_id)) {
+            echo get_the_post_thumbnail($post_id, [40, 40], ['style' => 'width:40px;height:40px;object-fit:cover;border-radius:3px;']);
+        } else {
+            echo '—';
+        }
     }
 
     if ('estat' === $column) {
@@ -41,7 +55,7 @@ function nodes_inventari_column($column, $post_id) {
         if (is_array($estats)) {
             $estats_list = '';
             foreach ($estats as $estat) {
-                $estats_list .= " <a href='" . $url_base . "&nodes_estat_inventari=" . $estat->slug . "'>" . $estat->name . "</a>,";
+                $estats_list .= " <a href='" . esc_url($url_base . "&nodes_estat_inventari=" . $estat->slug) . "'>" . esc_html($estat->name) . "</a>,";
             }
             echo rtrim($estats_list, ','); // remove last comma
         }
@@ -54,7 +68,7 @@ function nodes_inventari_column($column, $post_id) {
         if (is_array($ambits)) {
             $ambits_list = '';
             foreach ($ambits as $ambit) {
-                $ambits_list .= " <a href='" . $url_base . "&nodes_ambit_inventari=" . $ambit->slug . "'>" . $ambit->name . "</a>,";
+                $ambits_list .= " <a href='" . esc_url($url_base . "&nodes_ambit_inventari=" . $ambit->slug) . "'>" . esc_html($ambit->name) . "</a>,";
             }
             echo rtrim($ambits_list, ','); // remove last comma
         }
@@ -67,7 +81,7 @@ function nodes_inventari_column($column, $post_id) {
         if (is_array($origens)) {
             $origens_list = '';
             foreach ($origens as $origen) {
-                $origens_list .= " <a href='" . $url_base . "&nodes_origen_inventari=" . $origen->slug . "'>" . $origen->name . "</a>,";
+                $origens_list .= " <a href='" . esc_url($url_base . "&nodes_origen_inventari=" . $origen->slug) . "'>" . esc_html($origen->name) . "</a>,";
             }
             echo rtrim($origens_list, ','); // remove last comma
         }
@@ -80,7 +94,7 @@ function nodes_inventari_column($column, $post_id) {
         if (is_array($ubicacions)) {
             $ubicacio_list = '';
             foreach ($ubicacions as $ubi) {
-                $ubicacio_list .= " <a href='" . $url_base . "&nodes_ubicacio_inventari=" . $ubi->slug . "'>" . $ubi->name . "</a>,";
+                $ubicacio_list .= " <a href='" . esc_url($url_base . "&nodes_ubicacio_inventari=" . $ubi->slug) . "'>" . esc_html($ubi->name) . "</a>,";
             }
             echo rtrim($ubicacio_list, ','); // remove last comma
         }
@@ -96,37 +110,59 @@ function nodes_inventari_sortable_columns($columns) {
     return $columns;
 }
 
-add_filter('posts_join', 'nodes_inventari_search_join');
+// Cerca de l'admin: inclou els camps SACE i número de sèrie
+// La condició compartida pels tres filtres de sota
+function nodes_inventari_is_cpt_search($query) {
+    global $pagenow;
 
-function nodes_inventari_search_join($join) {
+    return is_admin()
+        && 'edit.php' === $pagenow
+        && $query->is_main_query()
+        && isset($_GET['post_type'])
+        && 'nodes_inventari' === $_GET['post_type']
+        && !empty($_GET['s']);
+}
 
-    global $pagenow, $wpdb;
+add_filter('posts_join', 'nodes_inventari_search_join', 10, 2);
 
-    // I want the filter only when performing a search on edit page of Custom Post Type named "nodes_inventari".
-    if (isset($_GET['post_type']) && is_admin() && 'edit.php' === $pagenow && 'nodes_inventari' === $_GET['post_type'] && !empty($_GET['s'])) {
-        $join .= 'LEFT JOIN ' . $wpdb->postmeta . ' ON ' . $wpdb->posts . '.ID = ' . $wpdb->postmeta . '.post_id ';
+function nodes_inventari_search_join($join, $query) {
+    global $wpdb;
+
+    if (nodes_inventari_is_cpt_search($query)) {
+        $join .= " LEFT JOIN {$wpdb->postmeta}
+                   ON {$wpdb->posts}.ID = {$wpdb->postmeta}.post_id
+                   AND {$wpdb->postmeta}.meta_key IN ('sace', 'serialnumber') ";
     }
 
     return $join;
-
 }
 
-add_filter('posts_where', 'nodes_inventari_search_where');
+add_filter('posts_where', 'nodes_inventari_search_where', 10, 2);
 
-function nodes_inventari_search_where($where) {
+function nodes_inventari_search_where($where, $query) {
+    global $wpdb;
 
-    global $pagenow, $wpdb;
-
-    // I want the filter only when performing a search on edit page of Custom Post Type named "nodes_inventari".
-    if (isset($_GET['post_type']) && is_admin() && 'edit.php' === $pagenow && 'nodes_inventari' === $_GET['post_type'] && !empty($_GET['s'])) {
+    if (nodes_inventari_is_cpt_search($query)) {
         $where = preg_replace(
             "/\(\s*" . $wpdb->posts . ".post_title\s+LIKE\s*(\'[^\']+\')\s*\)/",
-            "(" . $wpdb->posts . ".post_title LIKE $1) OR (" . $wpdb->postmeta . ".meta_value LIKE $1)", $where);
-        $where .= " GROUP BY {$wpdb->posts}.id"; // Solves duplicated results
+            "(" . $wpdb->posts . ".post_title LIKE $1) OR ({$wpdb->postmeta}.meta_value LIKE $1)",
+            $where
+        );
     }
 
     return $where;
+}
 
+add_filter('posts_groupby', 'nodes_inventari_search_groupby', 10, 2);
+
+function nodes_inventari_search_groupby($groupby, $query) {
+    global $wpdb;
+
+    if (nodes_inventari_is_cpt_search($query)) {
+        $groupby = "{$wpdb->posts}.ID";
+    }
+
+    return $groupby;
 }
 
 // Dropdown filters with custom fields 
@@ -169,9 +205,9 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 printf
                 (
                     '<option value="%s"%s>%s</option>',
-                    $value,
+                    esc_attr($value),
                     $value == $current_v ? ' selected="selected"' : '',
-                    $label
+                    esc_html($label)
                 );
             }
             ?>
@@ -196,9 +232,9 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 printf
                 (
                     '<option value="%s"%s>%s</option>',
-                    $value,
+                    esc_attr($value),
                     $value == $current_v ? ' selected="selected"' : '',
-                    $label
+                    esc_html($label)
                 );
             }
             ?>
@@ -224,9 +260,9 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 printf
                 (
                     '<option value="%s"%s>%s</option>',
-                    $value,
+                    esc_attr($value),
                     $value == $current_v ? ' selected="selected"' : '',
-                    $label
+                    esc_html($label)
                 );
             }
             ?>
@@ -252,9 +288,9 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
                 printf
                 (
                     '<option value="%s"%s>%s</option>',
-                    $value,
+                    esc_attr($value),
                     $value == $current_v ? ' selected="selected"' : '',
-                    $label
+                    esc_html($label)
                 );
             }
             ?>
@@ -264,7 +300,6 @@ function nodes_inventari_admin_posts_filter_restrict_manage_posts() {
 
 }
 
-add_filter('parse_query', 'nodes_inventari_posts_filter');
 
 /**
  * if submitted filter by post meta
@@ -274,34 +309,7 @@ add_filter('parse_query', 'nodes_inventari_posts_filter');
  * @return Void
  * @author Ohad Raz
  */
-function nodes_inventari_posts_filter($query) {
 
-    global $pagenow;
-    $type = 'post';
-
-    if (isset($_GET['post_type'])) {
-        $type = $_GET['post_type'];
-    }
-
-    if ('nodes_inventari' == $type && is_admin() && $pagenow == 'edit.php'
-        && isset($_GET['ADMIN_FILTER_FIELD_VALUE']) && $_GET['ADMIN_FILTER_FIELD_VALUE'] != '') {
-        $query->query_vars['meta_key'] = 'nodes_estat_inventari';
-        $query->query_vars['meta_value'] = $_GET['ADMIN_FILTER_FIELD_VALUE'];
-    }
-
-    if ('nodes_inventari' == $type && is_admin() && $pagenow == 'edit.php'
-        && isset($_GET['ADMIN_FILTER_FIELD_VALUE']) && $_GET['ADMIN_FILTER_FIELD_VALUE'] != '') {
-        $query->query_vars['meta_key'] = 'nodes_ubicacio_inventari';
-        $query->query_vars['meta_value'] = $_GET['ADMIN_FILTER_FIELD_VALUE'];
-    }
-
-    if ('nodes_inventari' == $type && is_admin() && $pagenow == 'edit.php'
-        && isset($_GET['ADMIN_FILTER_FIELD_VALUE']) && $_GET['ADMIN_FILTER_FIELD_VALUE'] != '') {
-        $query->query_vars['meta_key'] = 'nodes_origens_inventari';
-        $query->query_vars['meta_value'] = $_GET['ADMIN_FILTER_FIELD_VALUE'];
-    }
-
-}
 
 add_filter('views_edit-nodes_inventari', 'nodes_inventari_quick_links_labels');
 

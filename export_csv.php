@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 /* Export CSV */
 
 function admin_inventari_list_add_export_button($which) {
@@ -9,109 +13,145 @@ function admin_inventari_list_add_export_button($which) {
         ?>
         <input type="submit" name="export_all_inventari" class="button export"
                value="<?php _e('Exporta'); ?>"/>
+        <?php wp_nonce_field('nodes_export_inventari_' . get_current_user_id(), 'nodes_inventari_export_nonce'); ?>
         <?php
     }
 }
 
 add_action('manage_posts_extra_tablenav', 'admin_inventari_list_add_export_button', 20, 1);
 
+//Neutralitza valors que Excel/LibreOffice/Sheets interpretarien com a fórmula
+// si el primer caràcter és =, +, -, @, tabulador o retorn de carro (injecció CSV).
+function nodes_inventari_csv_safe($v) {
+    if (is_string($v) && $v !== '' && in_array($v[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+        return "'" . $v;
+    }
+    return $v;
+}
+
 function func_export_all_inventari() {
 
-    if (isset($_GET['export_all_inventari'])) {
-        $arg = [
-            'post_type' => 'nodes_inventari',
-            'post_status' => 'publish',
-            'posts_per_page' => -1,
-        ];
+    if (!isset($_GET['export_all_inventari'])) {
+        return;
+    }
 
-        global $post;
-        $arr_post = get_posts($arg);
+    if (!is_user_logged_in()) {
+        wp_die(
+            __('No tens permisos per exportar.'),
+            __('Accés denegat'),
+            [
+                'response'  => 403,
+                'back_link' => true,
+            ]
+        );
+    }
 
-        if ($arr_post) {
-            $data = date('d.m.Y');
-            header('Content-type: text/csv');
-            header('Content-Disposition: attachment; filename="inventari-' . $data . '.csv"');
-            header('Pragma: no-cache');
-            header('Expires: 0');
+    check_admin_referer('nodes_export_inventari_' . get_current_user_id(), 'nodes_inventari_export_nonce');
 
-            $file = fopen('php://output', 'w');
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
 
-            fputcsv($file, [
-                'Element',
-                'Descripció',
-                'SACE',
-                'Núm.Sèrie',
-                'Tipus',
-                'Ubicació',
-                'Estat',
-                'Origen'
-            ]);
+    $arg = [
+        'post_type' => 'nodes_inventari',
+        'post_status' => ['publish', 'private', 'pending'],
+        'posts_per_page' => -1,
+    ];
 
-            foreach ($arr_post as $post) {
-                setup_postdata($post);
+        // Els professors (sense edit_others_posts) només exporten l'inventari que han creat ells
+    if (!current_user_can('edit_others_posts')) {
+        $arg['author'] = get_current_user_id();
+    }
 
-                $element = get_the_title();
-                $descripcio = trim(strip_tags(get_the_content()));
+    global $post;
+    $arr_post = get_posts($arg);
 
-                $sace = get_post_meta(get_the_ID(), 'sace', true);
-                $serial_number = get_post_meta(get_the_ID(), 'serialnumber', true);
+    if ($arr_post) {
+        $previous_error_reporting = error_reporting(0);
+        $data = date('d.m.Y');
+        header('Content-type: text/csv');
+        header('Content-Disposition: attachment; filename="inventari-' . $data . '.csv"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
 
-                // Tipus
-                $ambits = get_the_terms(get_the_ID(), 'nodes_ambit_inventari', '', ',');
+        $file = fopen('php://output', 'w');
+        fputs($file, "\xEF\xBB\xBF");
+
+        fputcsv($file, [
+            'ID',
+            'Element',
+            'Descripció',
+            'SACE',
+            'Núm.Sèrie',
+            'Tipus',
+            'Ubicació',
+            'Estat',
+            'Origen',
+            'Visibilitat',
+            'Autor'
+        ]);
+
+        foreach ($arr_post as $post) {
+            setup_postdata($post);
+
+            $element = get_the_title();
+            $descripcio = trim(strip_tags(get_the_content()));
+
+            $sace = get_post_meta(get_the_ID(), 'sace', true);
+            $serial_number = get_post_meta(get_the_ID(), 'serialnumber', true);
+
+            // Tipus
+            $amb = wp_get_post_terms(get_the_ID(), 'nodes_ambit_inventari', ['fields' => 'names']);
+            if (!is_array($amb)) {
                 $amb = [];
-
-                if (!empty($ambits)) {
-                    foreach ($ambits as $ambit) {
-                        $amb[] = $ambit->name;
-                    }
-                }
-
-                // Ubicacions
-                $ubicacions = get_the_terms(get_the_ID(), 'nodes_ubicacio_inventari', '', ',');
-                $ubi = [];
-
-                if (!empty($ubicacions)) {
-                    foreach ($ubicacions as $ubicacio) {
-                        $ubi[] = $ubicacio->name;
-                    }
-                }
-
-                // Estats
-                $estats = get_the_terms(get_the_ID(), 'nodes_estat_inventari', '', ',');
-                $sta = [];
-
-                if (!empty($estats)) {
-                    foreach ($estats as $estat) {
-                        $sta[] = $estat->name;
-                    }
-                }
-
-                // Orígens
-                $origens = get_the_terms(get_the_ID(), 'nodes_origen_inventari', '', ',');
-                $ori = [];
-
-                if (!empty($origens)) {
-                    foreach ($origens as $origen) {
-                        $ori[] = $origen->name;
-                    }
-                }
-
-                fputcsv($file, [
-                    $element,
-                    $descripcio,
-                    $sace,
-                    $serial_number,
-                    implode(',', $amb),
-                    implode(',', $ubi),
-                    implode(',', $sta),
-                    implode(',', $ori)
-                ]);
             }
 
-            exit();
+            // Ubicacions
+            $ubi = wp_get_post_terms(get_the_ID(), 'nodes_ubicacio_inventari', ['fields' => 'names']);
+            if (!is_array($ubi)) {
+                $ubi = [];
+            }
+
+            // Estats
+            $sta = wp_get_post_terms(get_the_ID(), 'nodes_estat_inventari', ['fields' => 'names']);
+            if (!is_array($sta)) {
+                $sta = [];
+            }
+
+            // Orígens
+            $ori = wp_get_post_terms(get_the_ID(), 'nodes_origen_inventari', ['fields' => 'names']);
+            if (!is_array($ori)) {
+                $ori = [];
+            }
+
+            // Visibilitat (publicat / privat / pendent) i autor
+            $estats_pub = [
+                'publish' => 'Publicat',
+                'private' => 'Privat',
+                'pending' => 'Pendent',
+            ];
+            $post_status = get_post_status(get_the_ID());
+            $visibilitat = $estats_pub[$post_status] ?? $post_status;
+            $autor = get_the_author_meta('display_name', $post->post_author);
+
+            fputcsv($file, [
+                get_the_ID(),
+                nodes_inventari_csv_safe($element),
+                nodes_inventari_csv_safe($descripcio),
+                nodes_inventari_csv_safe($sace),
+                nodes_inventari_csv_safe($serial_number),
+                nodes_inventari_csv_safe(implode(',', $amb)),
+                nodes_inventari_csv_safe(implode(',', $ubi)),
+                nodes_inventari_csv_safe(implode(',', $sta)),
+                nodes_inventari_csv_safe(implode(',', $ori)),
+                nodes_inventari_csv_safe($visibilitat),
+                nodes_inventari_csv_safe($autor)
+            ]);
         }
+        error_reporting($previous_error_reporting);
+        exit();
     }
 
 }
 
-add_action('init', 'func_export_all_inventari');
+add_action('admin_init', 'func_export_all_inventari', 20);

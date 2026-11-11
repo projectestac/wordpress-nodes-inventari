@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 add_action('admin_head', 'nodes_inventari_css');
 
 function nodes_inventari_css() {
@@ -32,7 +36,7 @@ function nodes_inventari_css() {
     echo '.post-type-nodes_inventari .tablenav select {min-width: inherit;}';
 
     if (!current_user_can('activate_plugins')) {
-        echo '#nodes_estat_inventari_div {display:none}';
+        echo '#nodes_estat_inventaridiv {display:none}';
     }
 
     echo '</style>';

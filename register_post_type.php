@@ -1,5 +1,9 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 function nodes_inventari_register_post_type() {
 
     // CPT: nodes_inventari
@@ -23,11 +27,11 @@ function nodes_inventari_register_post_type() {
         'labels' => $labels,
         'public' => true,
         'show_in_rest' => false,
-        'has_archive' => false,
+        'has_archive' => true,
         'hierarchical' => false,
-        'publicly_queryable' => false,
+        'publicly_queryable' => true,
+        'exclude_from_search' => true,
         'query_var' => false,
-        'hierarchical' => false,
         'menu_icon' => 'dashicons-list-view',
         'supports' => [
             'title',
@@ -35,26 +39,20 @@ function nodes_inventari_register_post_type() {
             'thumbnail'
         ],
         'rewrite' => ['slug' => 'inventari-digital'],
-        'register_meta_box_cb' => 'add_inventari_metaboxes',
+        'register_meta_box_cb' => 'nodes_inventari_add_metaboxes',
     ];
 
     register_post_type('nodes_inventari', $args);
 
 }
 
-function add_nodes_inventari_to_query($query) {
-    if (is_home() && $query->is_main_query()) {
-        $query->set('post_type', ['post', 'nodes_inventari']);
-    }
-
-    return $query;
-}
 
 // TAXONOMIES
 
 function nodes_inventari_register_taxonomy() {
 
     // Estat de l'element
+    // Només els administradors (activate_plugins) poden gestionar i assignar estats
     $labels = [
         'name' => __('Estat de l\'element', 'nodes'),
         'singular_name' => __('Estat', 'nodes'),
@@ -74,7 +72,13 @@ function nodes_inventari_register_taxonomy() {
         'args' => ['orderby' => 'term_order'],
         'rewrite' => ['slug' => 'estats_inventari'],
         'show_admin_column' => true,
-        'show_in_rest' => true,
+        'show_in_rest' => false,
+        'capabilities' => [
+            'manage_terms' => 'activate_plugins',
+            'edit_terms'   => 'activate_plugins',
+            'delete_terms' => 'activate_plugins',
+            'assign_terms' => 'activate_plugins',
+        ],
     ];
 
     register_taxonomy('nodes_estat_inventari', ['nodes_inventari'], $args);
@@ -99,7 +103,7 @@ function nodes_inventari_register_taxonomy() {
         'args' => ['orderby' => 'term_order'],
         'rewrite' => ['slug' => 'ambit_inventari'],
         'show_admin_column' => true,
-        'show_in_rest' => true,
+        'show_in_rest' => false,
     ];
 
     register_taxonomy('nodes_ambit_inventari', ['nodes_inventari'], $args);
@@ -113,7 +117,7 @@ function nodes_inventari_register_taxonomy() {
         'edit_item' => __('Edita l\'origen', 'nodes'),
         'update_item' => __('Actualitza l\'origen', 'nodes'),
         'add_new_item' => __('Afegeix un origen nou', 'nodes'),
-        'new_item_name' => __('Nou de l\'origen nou', 'nodes'),
+        'new_item_name' => __('Nom de l\'origen nou', 'nodes'),
         'menu_name' => __('Orígens', 'nodes'),
     ];
 
@@ -124,8 +128,7 @@ function nodes_inventari_register_taxonomy() {
         'args' => ['orderby' => 'term_order'],
         'rewrite' => ['slug' => 'origen_inventari'],
         'show_admin_column' => true,
-        'show_in_rest' => true
-
+        'show_in_rest' => false,
     ];
 
     register_taxonomy('nodes_origen_inventari', ['nodes_inventari'], $args);
@@ -150,8 +153,7 @@ function nodes_inventari_register_taxonomy() {
         'args' => ['orderby' => 'term_order'],
         'rewrite' => ['slug' => 'ubicacio_inventari'],
         'show_admin_column' => true,
-        'show_in_rest' => true
-
+        'show_in_rest' => false,
     ];
 
     register_taxonomy('nodes_ubicacio_inventari', ['nodes_inventari'], $args);
@@ -165,160 +167,194 @@ function nodes_inventari_set_terms() {
         return;
     }
 
-    wp_insert_term(
-        'Fora de manteniment',
-        'nodes_estat_inventari',
-        [
-            'description' => 'Equip sense servei de manteniment',
-            'slug' => 'fora-manteniment'
-        ]
-    );
+    if (!term_exists('Fora de manteniment', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'Fora de manteniment',
+            'nodes_estat_inventari',
+            [
+                'description' => 'Equip sense servei de manteniment',
+                'slug' => 'fora-manteniment'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'En manteniment',
-        'nodes_estat_inventari',
-        [
-            'description' => 'Equip amb servei de manteniment actiu',
-            'slug' => 'en-manteniment'
-        ]
-    );
+    if (!term_exists('En manteniment', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'En manteniment',
+            'nodes_estat_inventari',
+            [
+                'description' => 'Equip amb servei de manteniment actiu',
+                'slug' => 'en-manteniment'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Fora de garantia',
-        'nodes_estat_inventari',
-        [
-            'description' => 'Equip sense garantia vigent',
-            'slug' => 'fora-garantia'
-        ]
-    );
+    if (!term_exists('Fora de garantia', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'Fora de garantia',
+            'nodes_estat_inventari',
+            [
+                'description' => 'Equip sense garantia vigent',
+                'slug' => 'fora-garantia'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'En garantia',
-        'nodes_estat_inventari',
-        [
-            'description' => 'Equip amb garantia vigent',
-            'slug' => 'en-garantia'
-        ]
-    );
+    if (!term_exists('En garantia', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'En garantia',
+            'nodes_estat_inventari',
+            [
+                'description' => 'Equip amb garantia vigent',
+                'slug' => 'en-garantia'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'En reparació',
-        'nodes_estat_inventari',
-        [
-            'description' => 'L\'element està en el servei tècnic',
-            'slug' => 'en-reparacio'
-        ]
-    );
+    if (!term_exists('En reparació', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'En reparació',
+            'nodes_estat_inventari',
+            [
+                'description' => 'L\'element està en el servei tècnic',
+                'slug' => 'en-reparacio'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'En ús',
-        'nodes_estat_inventari',
-        [
-            'description' => 'L\'Element està en ús, no disponible',
-            'slug' => 'en-us'
-        ]
-    );
+    if (!term_exists('En ús', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'En ús',
+            'nodes_estat_inventari',
+            [
+                'description' => 'L\'Element està en ús, no disponible',
+                'slug' => 'en-us'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Disponible',
-        'nodes_estat_inventari',
-        [
-            'description' => 'L\'Element està disponible',
-            'slug' => 'disponible'
-        ]
-    );
+    if (!term_exists('Disponible', 'nodes_estat_inventari')) {
+        wp_insert_term(
+            'Disponible',
+            'nodes_estat_inventari',
+            [
+                'description' => 'L\'Element està disponible',
+                'slug' => 'disponible'
+            ]
+        );
+    }
 
     // Tipus
 
-    wp_insert_term(
-        'Impressora',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Impressora, impressora 3D',
-            'slug' => 'impressora'
-        ]
-    );
+    if (!term_exists('Impressora', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Impressora',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Impressora, impressora 3D',
+                'slug' => 'impressora'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Projector',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Projector',
-            'slug' => 'projector'
-        ]
-    );
+    if (!term_exists('Projector', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Projector',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Projector',
+                'slug' => 'projector'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Panell interactiu / PDI',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Panell interactiu o PDI',
-            'slug' => 'panell-pdi'
-        ]
-    );
+    if (!term_exists('Panell interactiu / PDI', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Panell interactiu / PDI',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Panell interactiu o PDI',
+                'slug' => 'panell-pdi'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Portàtil',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Portàtil',
-            'slug' => 'portatil'
-        ]
-    );
+    if (!term_exists('Portàtil', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Portàtil',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Portàtil',
+                'slug' => 'portatil'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Tablet',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Tauleta',
-            'slug' => 'tablet'
-        ]
-    );
+    if (!term_exists('Tablet', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Tablet',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Tauleta',
+                'slug' => 'tablet'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Ordinador de sobretaula',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Ordinador de sobretaula',
-            'slug' => 'ordinador-sobretaula'
-        ]
-    );
+    if (!term_exists('Ordinador de sobretaula', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Ordinador de sobretaula',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Ordinador de sobretaula',
+                'slug' => 'ordinador-sobretaula'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Mòbil',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Telèfon mòbil',
-            'slug' => 'mobil'
-        ]
-    );
+    if (!term_exists('Mòbil', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Mòbil',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Telèfon mòbil',
+                'slug' => 'mobil'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Pantalla',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Pantalla de monitor',
-            'slug' => 'pantalla'
-        ]
-    );
+    if (!term_exists('Pantalla', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Pantalla',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Pantalla de monitor',
+                'slug' => 'pantalla'
+            ]
+        );
+    }
 
-    wp_insert_term(
-        'Element WIFI',
-        'nodes_ambit_inventari',
-        [
-            'description' => 'Punt d\'accés, repetidor, Mifis, etc',
-            'slug' => 'wifi'
-        ]
-    );
+    if (!term_exists('Element WIFI', 'nodes_ambit_inventari')) {
+        wp_insert_term(
+            'Element WIFI',
+            'nodes_ambit_inventari',
+            [
+                'description' => 'Punt d\'accés, repetidor, Mifis, etc',
+                'slug' => 'wifi'
+            ]
+        );
+    }
 
     // Orígens
-    wp_insert_term(
-        'Catàleg TIC',
-        'nodes_origen_inventari',
-        [
-            'description' => 'Catàleg TIC d\'autoservei',
-            'slug' => 'cataleg-tic'
-        ]
-    );
+    if (!term_exists('Catàleg TIC', 'nodes_origen_inventari')) {
+        wp_insert_term(
+            'Catàleg TIC',
+            'nodes_origen_inventari',
+            [
+                'description' => 'Catàleg TIC d\'autoservei',
+                'slug' => 'cataleg-tic'
+            ]
+        );
+    }
 
 }

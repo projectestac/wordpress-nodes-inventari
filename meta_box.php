@@ -1,18 +1,22 @@
 <?php
 
+if (!defined('ABSPATH')) {
+    exit;
+}
+
 // Metabox Inventari
-function add_inventari_metaboxes() {
+function nodes_inventari_add_metaboxes() {
     add_meta_box(
         'inventari_template',
         'Identificació (si cal)',
-        'inventari_template',
+        'nodes_inventari_template',
         'nodes_inventari',
         'normal',
         'default'
     );
 }
 
-function inventari_template() {
+function nodes_inventari_template() {
 
     global $post;
 
@@ -26,14 +30,18 @@ function inventari_template() {
 
     // L'input que apareixerà quan creem un nou element
     echo '<div class="identificadors">';
-    echo '<span class="lbl-sace"><label>SACE</label></span> <input width="300px" type="text" name="sace" value="' . $sace . '" />';
-    echo '<span class="lbl-serialnumber"><label>Numero de sèrie</label></span> <input width="300px" type="text" name="serialnumber" value="' . $serialnumber . '" />';
+    echo '<span class="lbl-sace"><label>SACE</label></span> <input width="300px" type="text" name="sace" value="' . esc_attr($sace) . '" />';
+    echo '<span class="lbl-serialnumber"><label>Numero de sèrie</label></span> <input width="300px" type="text" name="serialnumber" value="' . esc_attr($serialnumber) . '" />';
     echo '</div>';
 
 }
 
-function save_inventari($post_id, $post) {
+function nodes_inventari_save($post_id, $post) {
 
+    if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+    return $post->ID;
+    }
+  
     if (!isset($_POST['inventari_noncename'])) {
         return $post->ID;
     }
@@ -46,9 +54,14 @@ function save_inventari($post_id, $post) {
         return $post->ID;
     }
 
-    $inventari_meta['sace'] = $_POST['sace'];
-    $inventari_meta['serialnumber'] = $_POST['serialnumber'];
+    if ($post->post_type != 'nodes_inventari') {
+        return $post->ID;
+    }
 
+    // Fix #5: sanejar sempre l'entrada de l'usuari abans de desar-la
+    $inventari_meta['sace'] = sanitize_text_field($_POST['sace'] ?? '');
+    $inventari_meta['serialnumber'] = sanitize_text_field($_POST['serialnumber'] ?? '');
+    
     foreach ($inventari_meta as $key => $value) {
         // Check if it's a revision
         if ($post->post_type == 'revision') {
@@ -64,11 +77,11 @@ function save_inventari($post_id, $post) {
         }
 
         // If void, delete it
-        if (!$value) {
+        if ($value === '') {
             delete_post_meta($post->ID, $key);
         }
     }
 
 }
 
-add_action('save_post', 'save_inventari', 1, 2);
+add_action('save_post', 'nodes_inventari_save', 1, 2);

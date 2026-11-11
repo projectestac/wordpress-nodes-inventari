@@ -1,5 +1,7 @@
 <?php
-
+if (!defined('ABSPATH')) {
+    exit;
+}
 /**
  * @package Nodes_Inventari_digital
  * @version 1.0.1
@@ -13,15 +15,14 @@
  * Author URI: https://dossier.xtec.cat/jmeler/
  */
 
-include plugin_dir_path(__FILE__) . 'register_post_type.php';
-include plugin_dir_path(__FILE__) . 'meta_box.php';
-include plugin_dir_path(__FILE__) . 'admin_ui_list.php';
-include plugin_dir_path(__FILE__) . 'post_template.php';
-include plugin_dir_path(__FILE__) . 'export_csv.php';
-include plugin_dir_path(__FILE__) . 'styles.php';
+require_once plugin_dir_path(__FILE__) . 'register_post_type.php';
+require_once plugin_dir_path(__FILE__) . 'meta_box.php';
+require_once plugin_dir_path(__FILE__) . 'admin_ui_list.php';
+require_once plugin_dir_path(__FILE__) . 'post_template.php';
+require_once plugin_dir_path(__FILE__) . 'export_csv.php';
+require_once plugin_dir_path(__FILE__) . 'styles.php';
 
 add_action('init', 'nodes_inventari_register_post_type');
-add_action('pre_get_posts', 'add_nodes_inventari_to_query');
 add_action('init', 'nodes_inventari_register_taxonomy');
 register_activation_hook(__FILE__, 'nodes_inventari_activate');
 add_action('init', 'nodes_inventari_set_terms');
