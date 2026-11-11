@@ -4,15 +4,14 @@ if (!defined('ABSPATH')) {
 }
 /**
  * @package Nodes_Inventari_digital
- * @version 1.0.1
+ * @version 1.1.0
  */
 /**
  * Plugin Name: Nodes: Inventari digital
  * Plugin URI: https://agora.xtec.cat/nodes/inventari_digital
  * Description: Extensió per la gestió de l'inventari digital d'un centre educatiu.
- * Author: Xavier Meler
- * Version: 1.0.1
- * Author URI: https://dossier.xtec.cat/jmeler/
+ * Author: Xavier Meler, Òscar Benítez
+ * Version: 1.1.0
  */
 
 require_once plugin_dir_path(__FILE__) . 'register_post_type.php';
